@@ -1,0 +1,355 @@
+<Window x:Class="ImageViewer.views.MainView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:local="clr-namespace:ImageViewer.views"
+  xmlns:el="clr-namespace:ImageViewer.customControl"
+  xmlns:converter="clr-namespace:ImageViewer.converter"
+  xmlns:viewModels="clr-namespace:ImageViewer.viewModels"
+  xmlns:models="clr-namespace:ImageViewer.Models"
+  xmlns:cmds="clr-namespace:ImageViewer.Commands"
+  xmlns:s="clr-namespace:System;assembly=mscorlib"
+  mc:Ignorable="d"
+  x:Name="mainWindow"
+  Icon="/Images/main.ico"
+  d:DataContext="{d:DesignInstance viewModels:MainViewModel}"
+  MinHeight="{Binding windowMinHeight,Mode=OneWay}" MinWidth="{Binding windowMinWidth,Mode=OneWay}"
+  Title="MainView" Height="{Binding windowHeight,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
+  Width="{Binding windowWidth,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
+  Left="{Binding windowLeft,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
+  Top="{Binding windowTop,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
+  Loaded="MainView_OnLoaded" SizeChanged="MainView_OnSizeChanged">
+
+  <Window.InputBindings>
+    <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding ShowPropsCommand,ElementName=mainWindow}"
+      CommandParameter="{Binding imageInfo}" />
+    <KeyBinding Key="F" Modifiers="Control" Command="{Binding OpenFolderAndSelectFileCommand}"
+      CommandParameter="{Binding currentFileName}" />
+  </Window.InputBindings>
+
+  <Window.Resources>
+    <s:Boolean x:Key="BoolTrue">True</s:Boolean>
+    <s:Boolean x:Key="BoolFalse">False</s:Boolean>
+    <converter:EnumBoolConverter x:Key="enumBoolConverter"></converter:EnumBoolConverter>
+    <converter:InvertBoolConverter x:Key="invertBoolConverter"></converter:InvertBoolConverter>
+    <converter:EnumCompareConverter x:Key="enumCompareConverter"></converter:EnumCompareConverter>
+    <BooleanToVisibilityConverter x:Key="BooleanTo"></BooleanToVisibilityConverter>
+
+    <Style x:Key="VerticalSeparatorStyle" TargetType="Separator">
+      <Setter Property="LayoutTransform">
+        <Setter.Value>
+          <RotateTransform Angle="90" />
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Margin" Value="5,3"></Setter>
+    </Style>
+
+    <Style x:Key="CenterAlignedStyle" TargetType="{x:Type FrameworkElement}">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <DataTemplate x:Key="imgScroll">
+      <ListBox ItemsSource="{Binding imageList}" x:Name="imgList"
+        VirtualizingPanel.ScrollUnit="Pixel"
+        VirtualizingPanel.IsContainerVirtualizable="True"
+        VirtualizingPanel.VirtualizationMode="Standard"
+        BorderBrush="Transparent" BorderThickness="0" Focusable="False"
+        IsTabStop="False" Background="{Binding settings.backgroundText}"
+        DataContext="{Binding ElementName=mainWindow,Path=DataContext}">
+        <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                  <ContentPresenter />
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+          </Style>
+        </ListBox.ItemContainerStyle>
+
+        <ListBox.Template>
+          <ControlTemplate TargetType="ListBox">
+            <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+              <ScrollViewer x:Name="scrollViewControl" IsTabStop="False" Focusable="False"
+                ScrollChanged="ScrollViewControl_OnScrollChanged"
+                PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                PreviewMouseLeftButtonDown="ScrollViewer_MouseLeftDown"
+                HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
+                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+              </ScrollViewer>
+            </Border>
+          </ControlTemplate>
+        </ListBox.Template>
+
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Grid>
+              <TextBlock FontSize="25" Width="{Binding width}" Height="{Binding height}" HorizontalAlignment="Center"
+                VerticalAlignment="Center" Text="{Binding index}" />
+              <Image HorizontalAlignment="Center" Source="{Binding imageSource}"
+                Width="{Binding width}" Height="{Binding height}"
+                VerticalAlignment="Center" SnapsToDevicePixels="True"
+                RenderOptions.BitmapScalingMode="HighQuality" Panel.ZIndex="1">
+
+                <Image.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem>
+                      <MenuItem.Header>
+                        <TextBlock>
+                          <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} / {1}">
+                              <Binding Path="index" />
+                              <Binding Source="{x:Reference mainWindow}" Path="DataContext.imageList.Count" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                        </TextBlock>
+                      </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Header="打开文件位置"
+                      Command="{Binding DataContext.OpenFolderAndSelectFileCommand,Source={x:Reference mainWindow}}"
+                      CommandParameter="{Binding imagePath}" />
+                    <MenuItem Header="属性"
+                      Command="{Binding ShowPropsCommand,Source={x:Reference mainWindow}}"
+                      CommandParameter="{Binding imagePath}" />
+                  </ContextMenu>
+                </Image.ContextMenu>
+
+              </Image>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DataTemplate>
+
+    <DataTemplate x:Key="imgSingle">
+      <Grid DataContext="{Binding ElementName=mainWindow,Path=DataContext}">
+        <ScrollViewer Background="{Binding settings.backgroundText}" Focusable="False" IsTabStop="False"
+          local:ScrollViewerExtensions.ScrollToTop="{Binding scrollToTop,Mode=TwoWay}"
+          PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" MouseLeftButtonDown="ScrollViewer_MouseLeftDown"
+          HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
+          <ScrollViewer.Style>
+            <Style TargetType="ScrollViewer">
+              <Setter Property="Visibility" Value="Collapsed"></Setter>
+              <Style.Triggers>
+                <DataTrigger
+                  Binding="{Binding settings.scaleType, Converter={StaticResource enumCompareConverter},
+                ConverterParameter={x:Static models:Enums+EScaleType.FitImage}}"
+                  Value="True">
+                  <DataTrigger.Setters>
+                    <Setter Property="Visibility" Value="Visible"></Setter>
+                  </DataTrigger.Setters>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </ScrollViewer.Style>
+          <Image Source="{Binding imageInfo.imageSource}" HorizontalAlignment="Center"
+            VerticalAlignment="Center" SnapsToDevicePixels="True"
+            RenderOptions.BitmapScalingMode="HighQuality" Width="{Binding imgWidth}" Height="{Binding imgHeight}">
+          </Image>
+        </ScrollViewer>
+
+        <Border Background="{Binding settings.backgroundText}" BorderThickness="0">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Visibility" Value="Collapsed"></Setter>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding settings.scaleType}" Value="{x:Static models:Enums+EScaleType.FitImage}">
+                  <DataTrigger.Setters>
+                    <Setter Property="Visibility" Value="Visible"></Setter>
+                  </DataTrigger.Setters>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+          <Image Source="{Binding imageInfo.imageSource}" HorizontalAlignment="Center"
+            VerticalAlignment="Center" SnapsToDevicePixels="True"
+            RenderOptions.BitmapScalingMode="HighQuality">
+          </Image>
+        </Border>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="singleImageStatusTemp">
+      <StackPanel Orientation="Horizontal" Height="{Binding statusHeight}"
+        DataContext="{Binding ElementName=mainWindow,Path=DataContext}">
+        <StackPanel.Resources>
+          <Style TargetType="StackPanel" BasedOn="{StaticResource CenterAlignedStyle}" />
+          <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedStyle}" />
+          <Style TargetType="TextBox" BasedOn="{StaticResource CenterAlignedStyle}" />
+        </StackPanel.Resources>
+
+        <StackPanel Orientation="Horizontal">
+          <el:NumberBox IsTabStop="False" Text="{Binding currentFilesIndex1, Mode=OneWay}" BorderBrush="#DEDEDE"
+            Margin="2 0" LostFocus="ToggleImgIndex_LostFocus" KeyDown="ToggleImgIndex_KeyDown" />
+          <TextBlock Text="{Binding currentImagePathList.Length, StringFormat='/ {0}'}" />
+        </StackPanel>
+
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+        <TextBlock Text="{Binding currentFilePath}" />
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+        <TextBlock Text="{Binding imageInfo.fileSize}" />
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+
+        <TextBlock>
+          <TextBlock.Text>
+            <MultiBinding StringFormat="{}{0}x{1}x{2}b.{3}">
+              <Binding Path="imageInfo.width" />
+              <Binding Path="imageInfo.height" />
+              <Binding Path="imageInfo.bitDepth" />
+              <Binding Path="imageInfo.format" />
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+        <el:NumberBox IsTabStop="False"
+          Text="{Binding  settings.imgPercentageRatio, Mode=OneWay, StringFormat={}{0:0}}"
+          Margin="0 2"
+          BorderBrush="#DEDEDE" LostFocus="UpdateImgPercentage_LostFocus" KeyDown="UpdateImgPercentage_KeyDown" />
+        <TextBlock Text="%" />
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+        <TextBlock Text="{Binding imageInfo.loadTime, StringFormat='已载入{0}'}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="verticalScrollStatusTemp">
+      <StackPanel Orientation="Horizontal" Height="{Binding statusHeight}"
+        DataContext="{Binding ElementName=mainWindow,Path=DataContext}">
+        <StackPanel.Resources>
+          <Style TargetType="StackPanel" BasedOn="{StaticResource CenterAlignedStyle}" />
+          <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedStyle}" />
+          <Style TargetType="TextBox" BasedOn="{StaticResource CenterAlignedStyle}" />
+        </StackPanel.Resources>
+
+        <StackPanel Orientation="Horizontal">
+          <el:NumberBox IsTabStop="False" Text="{Binding currentFilesIndex1, Mode=OneWay}" BorderBrush="#DEDEDE"
+            Margin="2 0" LostFocus="ToggleImgIndex_LostFocus" KeyDown="ToggleImgIndex_KeyDown" />
+          <TextBlock Text="{Binding currentImagePathList.Length, StringFormat='/ {0}'}" />
+        </StackPanel>
+
+        <Separator Style="{StaticResource VerticalSeparatorStyle}" />
+        <el:NumberBox IsTabStop="False" Text="{Binding imgListPercentageRatio, Mode=OneWay, StringFormat={}{0:0}}"
+          Margin="0 2"
+          BorderBrush="#DEDEDE" LostFocus="UpdateImgPercentage_LostFocus" KeyDown="UpdateImgPercentage_KeyDown" />
+        <TextBlock Text="%" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Grid x:Name="Box" AllowDrop="True" DragOver="Box_OnDragOver" Drop="Box_OnDrop">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <Grid Height="{Binding menuHeight}"
+      Visibility="{Binding settings.fullScreen,Converter={StaticResource invertBoolConverter}}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <StackPanel Grid.Row="0" Height="18">
+        <Menu Background="Transparent">
+          <MenuItem Header="文件">
+            <MenuItem Header="打开..." InputGestureText="Ctrl+O"
+              Command="{Binding OpenFileCommand, ElementName=mainWindow}" />
+            <MenuItem Header="打开文件夹" InputGestureText="F2"
+              Command="{Binding OpenFolderCommand, ElementName=mainWindow}" />
+            <MenuItem Header="另存为..." InputGestureText="Ctrl+S" Command="{Binding SaveAsCommand}" />
+            <MenuItem Header="打开文件位置" InputGestureText="Ctrl+F" Command="{Binding OpenFolderAndSelectFileCommand}"
+              CommandParameter="{Binding currentFileName}" />
+            <Separator />
+            <MenuItem Header="属性" InputGestureText="Alt+Enter"
+              Command="{Binding ShowPropsCommand, ElementName=mainWindow}" CommandParameter="{Binding imageInfo}" />
+            <Separator />
+            <MenuItem Header="退出" Command="{x:Static cmds:Commands.CloseWindowCommand}" InputGestureText="Alt+X" />
+          </MenuItem>
+
+          <MenuItem Header="查看">
+            <MenuItem Header="状态栏" IsChecked="{Binding settings.isStatusBarVisible,Mode=OneWay}"
+              Command="{Binding ToggleStatusBarVisibleCommand}" />
+            <Separator />
+            <MenuItem Header="翻页查看" InputGestureText="F7"
+              Command="{Binding SingleImageModeCommand}"
+              Tag="{x:Static models:Enums+EViewMode.SingleImage}"
+              IsChecked="{Binding settings.currentViewMode,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EViewMode.SingleImage}}" />
+            <MenuItem Header="滚动查看" InputGestureText="F8"
+              Command="{Binding VerticalScrollModeCommand}"
+              Tag="{x:Static models:Enums+EViewMode.VerticalScroll}"
+              IsChecked="{Binding settings.currentViewMode,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EViewMode.VerticalScroll}}" />
+            <Separator />
+            <MenuItem Header="全屏幕" InputGestureText="F" Command="{Binding FullScreenCommand}" />
+            <MenuItem Header="上一张" InputGestureText="PageUp" Command="{Binding PrevImageCommand}" />
+            <MenuItem Header="下一张" InputGestureText="PageDown" Command="{Binding NextImageCommand}" />
+            <MenuItem Header="第一张" InputGestureText="Home" Command="{Binding ToFirstImageCommand}" />
+            <MenuItem Header="最后一张" InputGestureText="End" Command="{Binding ToLastImageCommand}" />
+          </MenuItem>
+
+          <MenuItem Header="缩放">
+            <MenuItem Header="放大" InputGestureText="Num +" Command="{Binding ZoomImgScaleCommand}"
+              CommandParameter="{StaticResource BoolTrue}" />
+            <MenuItem Header="缩小" InputGestureText="Num -" Command="{Binding MinifyImgScaleCommand}"
+              CommandParameter="{StaticResource BoolFalse }" />
+            <Separator />
+            <MenuItem Header="完整大小" InputGestureText="Num /" Command="{Binding ChangeScaleTypeCommand}"
+              CommandParameter="{x:Static models:Enums+EScaleType.FullSize}"
+              IsChecked="{Binding settings.scaleType,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EScaleType.FullSize}}" />
+            <MenuItem Header="适合图像" InputGestureText="Num *" Command="{Binding ChangeScaleTypeCommand}"
+              CommandParameter="{x:Static models:Enums+EScaleType.FitImage}"
+              IsChecked="{Binding settings.scaleType,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EScaleType.FitImage}}" />
+            <MenuItem Header="适合宽度" InputGestureText="Alt+→" Command="{Binding ChangeScaleTypeCommand}"
+              CommandParameter="{x:Static models:Enums+EScaleType.FitWidth}"
+              IsChecked="{Binding settings.scaleType,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EScaleType.FitWidth}}" />
+            <MenuItem Header="适合高度" InputGestureText="Alt+↓" Command="{Binding ChangeScaleTypeCommand}"
+              CommandParameter="{x:Static models:Enums+EScaleType.FitHeight}"
+              IsChecked="{Binding settings.scaleType,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EScaleType.FitHeight}}" />
+            <MenuItem Header="百分比锁定" InputGestureText="Ctrl+Alt+/" Command="{Binding ChangeScaleTypeCommand}"
+              CommandParameter="{x:Static models:Enums+EScaleType.Percentage}"
+              IsChecked="{Binding  settings.scaleType,Converter={StaticResource enumBoolConverter},ConverterParameter={x:Static models:Enums+EScaleType.Percentage}}" />
+          </MenuItem>
+
+          <MenuItem Header="工具">
+            <MenuItem Header="幻灯片间隔" Click="UpdateSlideshowInterval" />
+            <MenuItem Header="幻灯片开始/停止" IsChecked="{Binding isSlideshowActive}" InputGestureText="Pause"
+              Command="{Binding ToggleSlideshowCommand}" />
+            <Separator />
+            <MenuItem Header="左旋转" InputGestureText="Ctrl+←" Command="{Binding ImageRotationAngleCommand}"
+              CommandParameter="{StaticResource BoolTrue}" />
+            <MenuItem Header="右旋转" InputGestureText="Ctrl+→" Command="{Binding ImageRotationAngleCommand}"
+              CommandParameter="{StaticResource BoolFalse}" />
+            <Separator />
+            <MenuItem Header="选项" Click="OpenSettingsView" InputGestureText="Alt+O" />
+          </MenuItem>
+
+          <MenuItem Header="帮助">
+            <MenuItem Header="github" />
+          </MenuItem>
+        </Menu>
+      </StackPanel>
+      <Border Background="#D6D6D6" Grid.Row="1" Height="2" Margin="0 1" />
+    </Grid>
+    <ContentControl x:Name="statusControl" Grid.Row="3" Content="{Binding settings.currentViewMode}">
+      <ContentControl.Style>
+        <Style TargetType="ContentControl">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <MultiDataTrigger>
+              <MultiDataTrigger.Conditions>
+                <Condition Binding="{Binding settings.isStatusBarVisible}" Value="True"></Condition>
+                <Condition Binding="{Binding settings.fullScreen}" Value="False"></Condition>
+              </MultiDataTrigger.Conditions>
+              <Setter Property="Visibility" Value="Visible"></Setter>
+            </MultiDataTrigger>
+          </Style.Triggers>
+        </Style>
+      </ContentControl.Style>
+    </ContentControl>
+
+    <ContentControl Margin="{Binding imageContainerMargin}" x:Name="imgControlContainer" Grid.Row="2"
+      Content="{Binding settings.currentViewMode}" />
+  </Grid>
+</Window>

@@ -1,0 +1,31 @@
+<Window x:Class="ImageViewer.views.InputDialog"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:el="clr-namespace:ImageViewer.customControl"
+  mc:Ignorable="d"
+  Title="InputDialog" Height="120" Width="250"
+  WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#f0f0f0">
+  <StackPanel>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+      <StackPanel.Resources>
+        <Style TargetType="{x:Type TextBlock }">
+          <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+      </StackPanel.Resources>
+      <el:NumberBox x:Name="InputTextBox" Margin="6" Width="90" FontSize="14"
+        TextChanged="InputTextBox_TextChanged"
+        KeyDown="InputKeyDown"
+        VerticalAlignment="Center"
+        HorizontalAlignment="Center">
+      </el:NumberBox>
+      <TextBlock>毫秒(m)</TextBlock>
+      <TextBlock x:Name="SecondsTextBlock" Margin="5 0 0 0">0 秒</TextBlock>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 0">
+      <Button Content="确定" Width="50" FontSize="14" Margin="0 0 10 0" Click="OkButton_Click" />
+      <Button Content="取消" Width="50" FontSize="14" Click="CancelButton_Click" />
+    </StackPanel>
+  </StackPanel>
+</Window>

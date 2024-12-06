@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Timers;
 using System.Windows;
@@ -36,7 +37,7 @@ public partial class MainView {
 	public MainView() {
 		this.OpenFileCommand = new RelayCommand(OpenFile);
 		this.OpenFolderCommand = new RelayCommand(OpenFolder);
-		this.ShowPropsCommand = new(this.ShowProps);
+		this.ShowPropsCommand = new(this.ShowProps, _ => this.viewModel?.currentImagePathList.Length > 0);
 		this.ScrollViewRangeScrollCommand = new(this.ScrollViewControl_RangeScroll);
 
 		InitializeComponent();
@@ -351,7 +352,6 @@ public partial class MainView {
 			var viewportHeight = virtualizingStackPanel.ViewportHeight;
 			var viewportCenter = viewportHeight / 2;
 			List<int> indexList = [];
-
 			for (var index = 0; index < list.Count; index++) {
 				var item = (ListBoxItem)list[index];
 				GeneralTransform transform = item.TransformToAncestor(virtualizingStackPanel);
@@ -436,6 +436,13 @@ public partial class MainView {
 		if (keyDict.Values.Any(v => v)) return;
 		CompositionTargetEx.FrameUpdating -= scrollViewScrollHandler;
 		scrollViewScrollHandler = null;
+	}
+
+	private void toUrl(object sender, RoutedEventArgs e) {
+		Process.Start(new ProcessStartInfo {
+			FileName = (string)((MenuItem)sender).Tag,
+			UseShellExecute = true
+		});
 	}
 
 	/// <summary>

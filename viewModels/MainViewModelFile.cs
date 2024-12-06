@@ -275,6 +275,10 @@ public partial class MainViewModel {
 		this.LoadImage(this.currentImagePathList[index]);
 	}
 
+	private bool CanOpenFolderAndSelectFile(object? obj) {
+		return this.currentImagePathList.Length > 0;
+	}
+
 	private void OpenFolderAndSelectFile(object? v) {
 		if (v is not string path) return;
 
@@ -302,7 +306,7 @@ public partial class MainViewModel {
 		var newPath = saveFile.FileName;
 		try {
 			File.Copy(this.currentFilePath, newPath, true);
-		} catch (IOException _) {
+		} catch (IOException) {
 			MessageBox.Show("保存图片失败");
 		}
 	}

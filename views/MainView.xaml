@@ -15,7 +15,7 @@
   Icon="/Images/main.ico"
   d:DataContext="{d:DesignInstance viewModels:MainViewModel}"
   MinHeight="{Binding windowMinHeight,Mode=OneWay}" MinWidth="{Binding windowMinWidth,Mode=OneWay}"
-  Title="MainView" Height="{Binding windowHeight,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
+  Title="ImageViewer" Height="{Binding windowHeight,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
   Width="{Binding windowWidth,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
   Left="{Binding windowLeft,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
   Top="{Binding windowTop,Mode=TwoWay,UpdateSourceTrigger=Explicit}"
@@ -326,7 +326,8 @@
           </MenuItem>
 
           <MenuItem Header="帮助">
-            <MenuItem Header="github" />
+            <MenuItem Tag="https://github.com/bambooGHT/ImageViewer" Header="github" Click="toUrl">
+            </MenuItem>
           </MenuItem>
         </Menu>
       </StackPanel>

@@ -86,7 +86,7 @@ public partial class MainViewModel : ViewModelBase {
 		this.ZoomImgScaleCommand = new RelayCommand(AdjustImgScale, CanZoomImgScale);
 		this.MinifyImgScaleCommand = new RelayCommand(AdjustImgScale, CanMinifyImgScale);
 		this.ToggleSlideshowCommand = new RelayCommand(ToggleSlideshow, CanToggleSlideshow);
-		this.OpenFolderAndSelectFileCommand = new RelayCommand(OpenFolderAndSelectFile);
+		this.OpenFolderAndSelectFileCommand = new RelayCommand(OpenFolderAndSelectFile, CanOpenFolderAndSelectFile);
 		this.ImageRotationAngleCommand = new RelayCommand(ImageRotationAngle, CanImageRotationAngle);
 		this.ToggleStatusBarVisibleCommand = new RelayCommand(ToggleStatusBarVisible);
 		this.SingleImageModeCommand = new RelayCommand(_ => ToggleViewMode(Enums.EViewMode.SingleImage),
